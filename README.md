@@ -1,6 +1,6 @@
 # Networking, Security & Command-Line Cheat Sheets
 
-Six independent, searchable command cookbooks for general administration, networking, and defensive security. Each sheet starts with **30 problem-based recipes**: a command or configuration snippet, what it does, and what to change. That is **180 numbered recipes**, plus the longer reference examples and complete templates further down each file.
+Seven independent, searchable command cookbooks for general administration, networking, and defensive security. The six topic sheets each start with **30 problem-based recipes**. A separate **iptables-only example collection adds 100 recipes**, including three complete configurations. That is **280 numbered recipes**, plus the longer reference examples and templates further down the topic sheets.
 
 | File | Coverage |
 |---|---|
@@ -9,6 +9,7 @@ Six independent, searchable command cookbooks for general administration, networ
 | [gawk — recipes G01–G30](gawk.md#example-cookbook) | Capture groups, CSV, nested maps, percentiles, timestamps, flags, multiple files |
 | [sed — recipes S01–S30](sed.md#example-cookbook) | Replace config values, trim text, redact fields, edit blocks, preview changes |
 | [iptables — recipes I01–I30](iptables.md#example-cookbook) | Inspect counters, add/remove service rules, log drops, NAT, forwarding, IPv6, rollback |
+| [iptables examples — FW001–FW100](iptables-examples.md) | Dedicated rule collection: services, restrictions, egress, LAN/VPN routing, NAT, logging, IPv6, complete configurations |
 | [OpenVPN — recipes V01–V30](openvpn-configs.md#example-cookbook) | Change endpoints/routes/DNS, assign addresses, diagnose packets, verify certificates |
 
 ## Pick a tool by the problem
@@ -29,6 +30,7 @@ Six independent, searchable command cookbooks for general administration, networ
 | Keep/remove a block of lines | sed S17–S19 |
 | Preview an edit without changing the file | sed S30 |
 | Find which firewall rule sees my packet | iptables I01–I03 |
+| Browse lots of individual firewall rules to adapt | Dedicated iptables examples FW001–FW100 |
 | Open a service or restrict its allowed source | iptables I09–I14 |
 | Debug a firewall decision without allowing traffic | iptables I18–I19 |
 | Configure NAT or forward a public port | iptables I23–I26 |
