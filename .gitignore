@@ -1,0 +1,14 @@
+# Never commit real credentials or operational VPN profiles.
+*.key
+*.pem
+*.p12
+*.pfx
+*.ovpn
+*.log
+.env
+.env.*
+auth.txt
+credentials.txt
+private/
+pki/
+secrets/
