@@ -1,6 +1,6 @@
 # Networking, Security & Command-Line Cheat Sheets
 
-Seven independent, searchable command cookbooks for general administration, networking, and defensive security. The six topic sheets each start with **30 problem-based recipes**. A separate **iptables-only example collection adds 100 recipes**, including three complete configurations. That is **280 numbered recipes**, plus the longer reference examples and templates further down the topic sheets.
+Ten independent, searchable command cookbooks for general administration, networking, and defensive security. The original collection has 280 numbered recipes. Three additional guides cover network basics/CIDR sweeps, SSH forwarding, and Ligolo-ng, with worked layouts up to eight remote boxes deep.
 
 | File | Coverage |
 |---|---|
@@ -11,6 +11,9 @@ Seven independent, searchable command cookbooks for general administration, netw
 | [iptables — recipes I01–I30](iptables.md#example-cookbook) | Inspect counters, add/remove service rules, log drops, NAT, forwarding, IPv6, rollback |
 | [iptables examples — FW001–FW100](iptables-examples.md) | Dedicated rule collection: services, restrictions, egress, LAN/VPN routing, NAT, logging, IPv6, complete configurations |
 | [OpenVPN — recipes V01–V30](openvpn-configs.md#example-cookbook) | Change endpoints/routes/DNS, assign addresses, diagnose packets, verify certificates |
+| [Network basics and ping sweeps](network-basics-ping-sweeps.md) | 50 recipes, IPv4 prefix table /32 through /0, subnet loops, bounded concurrency, Windows/IPv6, Python helper |
+| [SSH tunneling](ssh-tunneling.md) | 50 recipes, local/remote TCP and SOCKS, jumps, Unix sockets, TUN/TAP, X11, eight-box worked layout |
+| [Ligolo-ng tunneling](ligolo-ng-tunneling.md) | 38 recipes, routes, listeners, bind/SOCKS transport, cleanup, step-by-step eight-agent layout |
 
 ## Pick a tool by the problem
 
