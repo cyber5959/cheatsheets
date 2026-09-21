@@ -1,6 +1,6 @@
 # Networking, Security & Command-Line Cheat Sheets
 
-Ten independent, searchable command cookbooks for general administration, networking, and defensive security. The original collection has 280 numbered recipes. Three additional guides cover network basics/CIDR sweeps, SSH forwarding, and Ligolo-ng, with worked layouts up to eight remote boxes deep.
+Independent, searchable command cookbooks for general administration, networking, and defensive security. The original collection has 280 numbered recipes. Additional guides cover network basics/CIDR sweeps, SSH forwarding, and Ligolo-ng, with worked layouts up to eight remote boxes deep. The Nmap toolkit adds a runnable Bash command builder with profiles, readable options, command preview, and native Nmap passthrough.
 
 | File | Coverage |
 |---|---|
@@ -14,6 +14,7 @@ Ten independent, searchable command cookbooks for general administration, networ
 | [Network basics and ping sweeps](network-basics-ping-sweeps.md) | 50 recipes, IPv4 prefix table /32 through /0, subnet loops, bounded concurrency, Windows/IPv6, Python helper |
 | [SSH tunneling](ssh-tunneling.md) | 50 recipes, local/remote TCP and SOCKS, jumps, Unix sockets, TUN/TAP, X11, eight-box worked layout |
 | [Ligolo-ng tunneling](ligolo-ng-tunneling.md) | 38 recipes, routes, listeners, bind/SOCKS transport, cleanup, step-by-step eight-agent layout |
+| [Nmap Bash toolkit](nmap-toolkit.sh) | Standalone wrapper with scan profiles, discovery, TCP/UDP/SCTP modes, service/OS detection, NSE, timing, output, dry-run, authorization gate, and complete native option passthrough |
 
 ## Pick a tool by the problem
 
@@ -41,6 +42,19 @@ Ten independent, searchable command cookbooks for general administration, networ
 | Diagnose VPN DNS problems | OpenVPN V12–V14 |
 | Find where VPN packets stop | OpenVPN V21–V25 |
 | Check a VPN certificate, key pair, or CRL | OpenVPN V26–V29 |
+| Build, preview, and run an Nmap command | Nmap Bash toolkit (`--help`, `--list-profiles`, and `--dry-run`) |
+
+## Nmap toolkit quick start
+
+```sh
+chmod +x nmap-toolkit.sh
+./nmap-toolkit.sh --help
+./nmap-toolkit.sh --list-profiles
+./nmap-toolkit.sh --dry-run --profile inventory --target 192.0.2.0/24 --output-all inventory
+./nmap-toolkit.sh --authorized --profile service --target scanme.nmap.org --ports 22,80,443
+```
+
+`--dry-run` prints the exact safely quoted command without sending packets. Actual scans require `--authorized`. The named wrapper options cover common scan work; put any native Nmap arguments after `--` for full compatibility with the installed Nmap version. Use the script only for hosts and networks you own or have explicit permission to assess.
 
 ## How to use this repository
 
@@ -63,4 +77,4 @@ To upload: open your repository, choose **Add file → Upload files**, and drag 
 
 These are original worked examples, with official reference links in each sheet. They combine quick lookup tables with longer workflows and common failure cases. Reference review: September 2026. Version-specific features are labeled; no claim is made that an example is universally supported or production-ready without adaptation.
 
-Recipe numbering, Markdown structure, and internal links were checked during preparation. Commands were reviewed, but the Linux commands were not runtime-tested in this Windows workspace. Firewall and VPN examples are templates, not configurations tested against your network. Before changing remote networking, keep console access and a tested recovery path.
+Recipe numbering, Markdown structure, internal links, and the Nmap wrapper's structure/options were checked during preparation. Linux commands were reviewed but were not runtime-tested in this restricted Windows workspace. Firewall and VPN examples are templates, not configurations tested against your network. Before changing remote networking, keep console access and a tested recovery path.
