@@ -15,6 +15,7 @@ Independent, searchable command cookbooks for general administration, networking
 | [SSH tunneling](ssh-tunneling.md) | 50 recipes, local/remote TCP and SOCKS, jumps, Unix sockets, TUN/TAP, X11, eight-box worked layout |
 | [Ligolo-ng tunneling](ligolo-ng-tunneling.md) | 38 recipes, routes, listeners, bind/SOCKS transport, cleanup, step-by-step eight-agent layout |
 | [Nmap Bash toolkit](nmap-toolkit.sh) | Standalone wrapper with scan profiles, discovery, TCP/UDP/SCTP modes, service/OS detection, NSE, timing, output, dry-run, authorization gate, and complete native option passthrough |
+| [SSH Tunnel Master](ssh-tunnel-master.sh) | Interactive unlimited tunnel builder for local, remote, dynamic, remote-SOCKS, and raw OpenSSH forwards; launches every tunnel in a named, balanced Terminator split |
 
 ## Pick a tool by the problem
 
@@ -43,6 +44,7 @@ Independent, searchable command cookbooks for general administration, networking
 | Find where VPN packets stop | OpenVPN V21–V25 |
 | Check a VPN certificate, key pair, or CRL | OpenVPN V26–V29 |
 | Build, preview, and run an Nmap command | Nmap Bash toolkit (`--help`, `--list-profiles`, and `--dry-run`) |
+| Build many visible, labeled SSH tunnels | SSH Tunnel Master (interactive menu, save/load, dry-run, Terminator panes) |
 
 ## Nmap toolkit quick start
 
@@ -55,6 +57,16 @@ chmod +x nmap-toolkit.sh
 ```
 
 `--dry-run` prints the exact safely quoted command without sending packets. Actual scans require `--authorized`. The named wrapper options cover common scan work; put any native Nmap arguments after `--` for full compatibility with the installed Nmap version. Use the script only for hosts and networks you own or have explicit permission to assess.
+
+## SSH Tunnel Master quick start
+
+```sh
+chmod +x ssh-tunnel-master.sh
+./ssh-tunnel-master.sh --doctor
+./ssh-tunnel-master.sh
+```
+
+Use the numbered menu to add local (`-L`), remote (`-R`), local SOCKS (`-D`), remote SOCKS, or advanced raw forwards. Give every tunnel a descriptive name; it becomes the Terminator pane title. Add as many tunnels as needed, review them with option 6, then press `L` to launch. Option 8 saves the set for later, and `--load FILE --launch` reopens it without rebuilding each entry.
 
 ## How to use this repository
 
