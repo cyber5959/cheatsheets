@@ -16,6 +16,7 @@ Independent, searchable command cookbooks for general administration, networking
 | [Ligolo-ng tunneling](ligolo-ng-tunneling.md) | 38 recipes, routes, listeners, bind/SOCKS transport, cleanup, step-by-step eight-agent layout |
 | [Nmap Bash toolkit](nmap-toolkit.sh) | Standalone wrapper with scan profiles, discovery, TCP/UDP/SCTP modes, service/OS detection, NSE, timing, output, dry-run, authorization gate, and complete native option passthrough |
 | [SSH Tunnel Master](ssh-tunnel-master.sh) | Interactive unlimited tunnel builder for local, remote, dynamic, remote-SOCKS, and raw OpenSSH forwards; launches every tunnel in a named, balanced Terminator split |
+| [IPIP Tunnel Master](ipip-tunnel-master.sh) | Interactive two-ended Linux IPIP topology manager with local/SSH execution, nested tunnel ordering, MTU guidance, routes, status, rollback, save/load, and endpoint-script export |
 
 ## Pick a tool by the problem
 
@@ -45,6 +46,7 @@ Independent, searchable command cookbooks for general administration, networking
 | Check a VPN certificate, key pair, or CRL | OpenVPN V26–V29 |
 | Build, preview, and run an Nmap command | Nmap Bash toolkit (`--help`, `--list-profiles`, and `--dry-run`) |
 | Build many visible, labeled SSH tunnels | SSH Tunnel Master (interactive menu, save/load, dry-run, Terminator panes) |
+| Build routed IPv4-in-IPv4 links across multiple boxes | IPIP Tunnel Master (ordered topology, plan/apply/status/destroy, nested MTUs) |
 
 ## Nmap toolkit quick start
 
@@ -67,6 +69,16 @@ chmod +x ssh-tunnel-master.sh
 ```
 
 Use the numbered menu to add local (`-L`), remote (`-R`), local SOCKS (`-D`), remote SOCKS, or advanced raw forwards. Give every tunnel a descriptive name; it becomes the Terminator pane title. Add as many tunnels as needed, review them with option 6, then press `L` to launch. Option 8 saves the set for later, and `--load FILE --launch` reopens it without rebuilding each entry.
+
+## IPIP Tunnel Master quick start
+
+```sh
+chmod +x ipip-tunnel-master.sh
+./ipip-tunnel-master.sh
+./ipip-tunnel-master.sh --load ipip-topology.txt --plan
+```
+
+Define the underlay tunnel first and each deeper tunnel afterward. Every record describes endpoint A and B, where its commands run (`local` or SSH), outer and inner IPv4 addresses, routes, MTU, TTL, and forwarding. Review option 6 before applying option 7. Applied state is runtime-only unless you separately convert the exported endpoint scripts into your distribution's persistent network configuration.
 
 ## How to use this repository
 
