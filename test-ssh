@@ -1,0 +1,117 @@
+Use your own Linux machine as both the SSH client and SSH server. Everything can stay on 127.0.0.1.
+1. Install the test components
+On Ubuntu/Debian:
+sudo apt update
+sudo apt install openssh-server openssh-client terminator autossh curl python3
+sudo systemctl enable --now ssh
+Confirm SSH is listening:
+ss -ltn | grep ':22'
+ssh "$USER"@127.0.0.1
+Get ordinary localhost SSH working before testing the script. Ubuntu uses the openssh-server package, and recent releases may activate it through systemd socket activation. Ubuntu OpenSSH information
+2. Optional: create a dedicated test key
+This avoids entering your password separately in every pane:
+install -d -m 700 ~/.ssh
+
+ssh-keygen \
+  -t ed25519 \
+  -f ~/.ssh/tunnel-test \
+  -N '' \
+  -C 'localhost tunnel testing'
+
+touch ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+
+grep -qxF "$(cat ~/.ssh/tunnel-test.pub)" ~/.ssh/authorized_keys ||
+  cat ~/.ssh/tunnel-test.pub >> ~/.ssh/authorized_keys
+Test it:
+ssh -i ~/.ssh/tunnel-test "$USER"@127.0.0.1
+Type exit after it connects.
+3. Start a local test website
+Open a separate terminal and run:
+mkdir -p /tmp/tunnel-test
+printf 'SSH tunnel test worked!\n' >/tmp/tunnel-test/index.html
+
+python3 -m http.server 8000 \
+  --bind 127.0.0.1 \
+  --directory /tmp/tunnel-test
+Leave this running. Verify it directly:
+curl http://127.0.0.1:8000
+4. Check the script’s dependencies
+chmod +x ssh-tunnel-master.sh
+./ssh-tunnel-master.sh --doctor
+Then start it:
+./ssh-tunnel-master.sh
+5. Add a local tunnel
+Choose 1 — Add local forward and enter:
+Tunnel name: Local Web Test
+SSH server: 127.0.0.1
+SSH username: your Linux username
+SSH port: 22
+Identity file: ~/.ssh/tunnel-test
+Jump host: leave blank
+Compression: no
+Automatic reconnect: no
+Alive interval: 30
+Alive count: 3
+Local bind address: 127.0.0.1
+Local listening port: 8080
+Destination host: 127.0.0.1
+Destination port: 8000
+This produces the equivalent of:
+ssh -N -T \
+  -L 127.0.0.1:8080:127.0.0.1:8000 \
+  -i ~/.ssh/tunnel-test \
+  "$USER"@127.0.0.1
+6. Add a remote tunnel
+Choose 2 — Add remote forward:
+Tunnel name: Remote Web Test
+SSH server: 127.0.0.1
+SSH username: your Linux username
+SSH port: 22
+Identity file: ~/.ssh/tunnel-test
+Jump host: leave blank
+Compression: no
+Automatic reconnect: no
+Remote bind address: 127.0.0.1
+Remote listening port: 9000
+Destination host: 127.0.0.1
+Destination port: 8000
+Because the SSH client and server are the same computer, port 9000 will also appear locally.
+7. Add a SOCKS tunnel
+Choose 3 — Add local SOCKS proxy:
+Tunnel name: Local SOCKS Test
+SSH server: 127.0.0.1
+SSH username: your Linux username
+SSH port: 22
+Identity file: ~/.ssh/tunnel-test
+Jump host: leave blank
+Compression: no
+Automatic reconnect: no
+Local SOCKS bind address: 127.0.0.1
+Local SOCKS listening port: 1080
+OpenSSH supports local, remote, dynamic SOCKS, Unix-socket and tunnel-device forwarding. Official OpenSSH manual
+8. Preview and launch
+Select 6 to review the tunnels.
+Select D first. This prints every SSH command without opening connections.
+Restart the script or return to the menu, then select L. Terminator should open with three labeled panes:
+- Local Web Test
+- Remote Web Test
+- Local SOCKS Test
+The script uses Terminator’s DBus interface to make and label the splits. Terminator DBus documentation
+9. Test each tunnel
+In another terminal:
+# Local -L tunnel
+curl http://127.0.0.1:8080
+
+# Remote -R tunnel
+curl http://127.0.0.1:9000
+
+# Dynamic -D SOCKS tunnel
+curl --noproxy '' \
+  --socks5-hostname 127.0.0.1:1080 \
+  http://127.0.0.1:8000
+Each command should print:
+SSH tunnel test worked!
+Check all listeners:
+ss -ltn | grep -E ':(8000|8080|9000|1080)\b'
+Stop a tunnel with Ctrl-C inside its Terminator pane. Stop the Python test server with Ctrl-C in its original terminal.
