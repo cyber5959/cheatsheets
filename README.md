@@ -2,8 +2,11 @@
 
 Independent, searchable command cookbooks for general administration, networking, and defensive security. The original collection has 280 numbered recipes. Additional guides cover network basics/CIDR sweeps, SSH forwarding, and Ligolo-ng, with worked layouts up to eight remote boxes deep. The Nmap toolkit adds a runnable Bash command builder with profiles, readable options, command preview, and native Nmap passthrough.
 
+Start with [master.sh](master.sh) for one self-contained persistent menu containing the complete Nmap, SSH tunnel, and IPIP tunnel tools. It also checks the external commands those tools use.
+
 | File | Coverage |
 |---|---|
+| [Master toolkit menu](master.sh) | One self-contained file with the complete Nmap, SSH tunnel, and IPIP tunnel scripts embedded inside it; includes a persistent menu, dependency checks, and optional standalone extraction |
 | [Regex — recipes R01–R30](regex.md#example-cookbook) | Find exact fields, extract addresses, filter errors, search logs, validate token shapes |
 | [awk — recipes A01–A30](awk.md#example-cookbook) | Select columns, count/sum/group, join inventories, find duplicates, calculate deltas |
 | [gawk — recipes G01–G30](gawk.md#example-cookbook) | Capture groups, CSV, nested maps, percentiles, timestamps, flags, multiple files |
@@ -14,7 +17,7 @@ Independent, searchable command cookbooks for general administration, networking
 | [Network basics and ping sweeps](network-basics-ping-sweeps.md) | 50 recipes, IPv4 prefix table /32 through /0, subnet loops, bounded concurrency, Windows/IPv6, Python helper |
 | [SSH tunneling](ssh-tunneling.md) | 50 recipes, local/remote TCP and SOCKS, jumps, Unix sockets, TUN/TAP, X11, eight-box worked layout |
 | [Ligolo-ng tunneling](ligolo-ng-tunneling.md) | 38 recipes, routes, listeners, bind/SOCKS transport, cleanup, step-by-step eight-agent layout |
-| [Nmap Bash toolkit](nmap-toolkit.sh) | Standalone wrapper with scan profiles, discovery, TCP/UDP/SCTP modes, service/OS detection, NSE, timing, output, dry-run, authorization gate, and complete native option passthrough |
+| [Nmap interactive tool](nmap.sh) | Persistent numbered scan menu with plain-language explanations, discovery/network scans, TCP/UDP/SCTP techniques, service/OS/NSE scans, preview, output, and advanced native passthrough |
 | [SSH Tunnel Master](ssh-tunnel-master.sh) | Interactive unlimited tunnel builder for local, remote, dynamic, remote-SOCKS, and raw OpenSSH forwards; launches every tunnel in a named, balanced Terminator split |
 | [IPIP Tunnel Master](ipip-tunnel-master.sh) | Interactive two-ended Linux IPIP topology manager with local/SSH execution, nested tunnel ordering, MTU guidance, routes, status, rollback, save/load, and endpoint-script export |
 
@@ -44,21 +47,31 @@ Independent, searchable command cookbooks for general administration, networking
 | Diagnose VPN DNS problems | OpenVPN V12–V14 |
 | Find where VPN packets stop | OpenVPN V21–V25 |
 | Check a VPN certificate, key pair, or CRL | OpenVPN V26–V29 |
-| Build, preview, and run an Nmap command | Nmap Bash toolkit (`--help`, `--list-profiles`, and `--dry-run`) |
+| Choose, preview, and run Nmap scans from a menu | `nmap.sh` interactive tool |
 | Build many visible, labeled SSH tunnels | SSH Tunnel Master (interactive menu, save/load, dry-run, Terminator panes) |
 | Build routed IPv4-in-IPv4 links across multiple boxes | IPIP Tunnel Master (ordered topology, plan/apply/status/destroy, nested MTUs) |
 
 ## Nmap toolkit quick start
 
 ```sh
-chmod +x nmap-toolkit.sh
-./nmap-toolkit.sh --help
-./nmap-toolkit.sh --list-profiles
-./nmap-toolkit.sh --dry-run --profile inventory --target 192.0.2.0/24 --output-all inventory
-./nmap-toolkit.sh --authorized --profile service --target scanme.nmap.org --ports 22,80,443
+chmod +x nmap.sh
+./nmap.sh
+
+# Advanced command-line use remains available:
+./nmap.sh --list-profiles
+./nmap.sh --dry-run --profile inventory --target 192.0.2.0/24 --output-all inventory
 ```
 
-`--dry-run` prints the exact safely quoted command without sending packets. Actual scans require `--authorized`. The named wrapper options cover common scan work; put any native Nmap arguments after `--` for full compatibility with the installed Nmap version. Use the script only for hosts and networks you own or have explicit permission to assess.
+The default interface is a persistent numbered menu that explains each scan, asks for a target with examples, offers ports and speed in plain language, and returns after previewing or completing a scan. Advanced named options and native arguments after `--` remain available. Use the script only for hosts and networks you own or have explicit permission to assess.
+
+## Master menu quick start
+
+```sh
+chmod +x master.sh
+./master.sh
+```
+
+`master.sh` does not look for companion scripts or cheat sheets. It writes its embedded tools to a private temporary directory only while it is running, cleans them up when it exits, and returns to the master menu after a child tool closes. To export standalone copies manually, run `./master.sh --extract ./network-tools`.
 
 ## SSH Tunnel Master quick start
 
