@@ -2,7 +2,7 @@
 
 Independent, searchable command cookbooks for general administration, networking, and defensive security. The original collection has 280 numbered recipes. Additional guides cover network basics/CIDR sweeps, SSH forwarding, and Ligolo-ng, with worked layouts up to eight remote boxes deep. The Nmap toolkit adds a runnable Bash command builder with profiles, readable options, command preview, and native Nmap passthrough.
 
-Start with [master.sh](master.sh) for one self-contained persistent menu containing the complete Nmap, SSH tunnel, and IPIP tunnel tools. It also checks the external commands those tools use.
+**The only tool file you need is [master.sh](master.sh).** It is one self-contained persistent menu containing the complete Nmap, SSH tunnel, and IPIP tunnel tools. It does not load the other scripts or the cheat sheets. The remaining files are documentation and development copies.
 
 | File | Coverage |
 |---|---|
@@ -17,9 +17,6 @@ Start with [master.sh](master.sh) for one self-contained persistent menu contain
 | [Network basics and ping sweeps](network-basics-ping-sweeps.md) | 50 recipes, IPv4 prefix table /32 through /0, subnet loops, bounded concurrency, Windows/IPv6, Python helper |
 | [SSH tunneling](ssh-tunneling.md) | 50 recipes, local/remote TCP and SOCKS, jumps, Unix sockets, TUN/TAP, X11, eight-box worked layout |
 | [Ligolo-ng tunneling](ligolo-ng-tunneling.md) | 38 recipes, routes, listeners, bind/SOCKS transport, cleanup, step-by-step eight-agent layout |
-| [Nmap interactive tool](nmap.sh) | Persistent numbered scan menu with plain-language explanations, discovery/network scans, TCP/UDP/SCTP techniques, service/OS/NSE scans, preview, output, and advanced native passthrough |
-| [SSH Tunnel Master](ssh-tunnel-master.sh) | Interactive unlimited tunnel builder for local, remote, dynamic, remote-SOCKS, and raw OpenSSH forwards; launches every tunnel in a named, balanced Terminator split |
-| [IPIP Tunnel Master](ipip-tunnel-master.sh) | Interactive two-ended Linux IPIP topology manager with local/SSH execution, nested tunnel ordering, MTU guidance, routes, status, rollback, save/load, and endpoint-script export |
 
 ## Pick a tool by the problem
 
@@ -47,51 +44,20 @@ Start with [master.sh](master.sh) for one self-contained persistent menu contain
 | Diagnose VPN DNS problems | OpenVPN V12–V14 |
 | Find where VPN packets stop | OpenVPN V21–V25 |
 | Check a VPN certificate, key pair, or CRL | OpenVPN V26–V29 |
-| Choose, preview, and run Nmap scans from a menu | `nmap.sh` interactive tool |
-| Build many visible, labeled SSH tunnels | SSH Tunnel Master (interactive menu, save/load, dry-run, Terminator panes) |
-| Build routed IPv4-in-IPv4 links across multiple boxes | IPIP Tunnel Master (ordered topology, plan/apply/status/destroy, nested MTUs) |
+| Choose, preview, and run Nmap scans from a menu | `master.sh` → option 1 |
+| Build many visible, labeled SSH tunnels | `master.sh` → option 2 |
+| Build routed IPv4-in-IPv4 links across multiple boxes | `master.sh` → option 3 |
 
-## Nmap toolkit quick start
-
-```sh
-chmod +x nmap.sh
-./nmap.sh
-
-# Advanced command-line use remains available:
-./nmap.sh --list-profiles
-./nmap.sh --dry-run --profile inventory --target 192.0.2.0/24 --output-all inventory
-```
-
-The default interface is a persistent numbered menu that explains each scan, asks for a target with examples, offers ports and speed in plain language, and returns after previewing or completing a scan. Advanced named options and native arguments after `--` remain available. Use the script only for hosts and networks you own or have explicit permission to assess.
-
-## Master menu quick start
+## Master tool quick start
 
 ```sh
 chmod +x master.sh
 ./master.sh
 ```
 
-`master.sh` does not look for companion scripts or cheat sheets. It writes its embedded tools to a private temporary directory only while it is running, cleans them up when it exits, and returns to the master menu after a child tool closes. To export standalone copies manually, run `./master.sh --extract ./network-tools`.
+Current version: **2.1.0**. Option 1 opens Nmap, option 2 opens the SSH tunnel manager, and option 3 opens the IPIP manager. Quitting a tool returns to the master menu. The IPIP tool also returns to its own menu after an endpoint command fails.
 
-## SSH Tunnel Master quick start
-
-```sh
-chmod +x ssh-tunnel-master.sh
-./ssh-tunnel-master.sh --doctor
-./ssh-tunnel-master.sh
-```
-
-Use the numbered menu to add local (`-L`), remote (`-R`), local SOCKS (`-D`), remote SOCKS, or advanced raw forwards. Give every tunnel a descriptive name; it becomes the Terminator pane title. Add as many tunnels as needed, review them with option 6, then press `L` to launch. Option 8 saves the set for later, and `--load FILE --launch` reopens it without rebuilding each entry.
-
-## IPIP Tunnel Master quick start
-
-```sh
-chmod +x ipip-tunnel-master.sh
-./ipip-tunnel-master.sh
-./ipip-tunnel-master.sh --load ipip-topology.txt --plan
-```
-
-Define the underlay tunnel first and each deeper tunnel afterward. Every record describes endpoint A and B, where its commands run (`local` or SSH), outer and inner IPv4 addresses, routes, MTU, TTL, and forwarding. Review option 6 before applying option 7. Applied state is runtime-only unless you separately convert the exported endpoint scripts into your distribution's persistent network configuration.
+`master.sh` contains all three tools. It writes private runtime copies to a temporary directory while running and deletes them when it exits. Malformed IPv4, IPv6, CIDR, hostname, and route input is rejected at the relevant question, which is repeated until you enter a valid value.
 
 ## How to use this repository
 

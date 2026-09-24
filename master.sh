@@ -5,7 +5,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 PROGRAM=${0##*/}
-VERSION=2.0.0
+VERSION=2.1.0
 SESSION_DIR=""
 
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 2; }
@@ -27,7 +27,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 PROGRAM=${0##*/}
-VERSION="2.0.0"
+VERSION="2.1.0"
 NMAP_BIN=${NMAP_BIN:-nmap}
 
 profile="default"
@@ -354,6 +354,66 @@ script_path() {
 
 menu_pause() { printf '\n'; read -r -p 'Press Enter to return to the scan menu...' _ || true; }
 
+valid_ipv4() {
+    local ip=$1 part
+    local -a parts=()
+    [[ $ip =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || return 1
+    local IFS=.; read -r -a parts <<< "$ip"
+    ((${#parts[@]} == 4)) || return 1
+    for part in "${parts[@]}"; do ((10#$part <= 255)) || return 1; done
+}
+
+valid_hostname() {
+    local value=$1 label
+    local -a labels=()
+    ((${#value} >= 1 && ${#value} <= 253)) || return 1
+    [[ $value != .* && $value != *. && $value != *..* ]] || return 1
+    local IFS=.; read -r -a labels <<< "$value"
+    for label in "${labels[@]}"; do
+        ((${#label} >= 1 && ${#label} <= 63)) || return 1
+        [[ $label =~ ^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$ ]] || return 1
+    done
+}
+
+valid_ipv6_literal() {
+    local value=$1 zone='' left right part count=0
+    local -a groups=()
+    if [[ $value == \[*\] ]]; then value=${value:1:${#value}-2}
+    elif [[ $value == *'['* || $value == *']'* ]]; then return 1; fi
+    if [[ $value == *%* ]]; then zone=${value##*%}; value=${value%%%*}; [[ $zone =~ ^[A-Za-z0-9_.-]+$ ]] || return 1; fi
+    [[ $value == *:* && $value =~ ^[0-9A-Fa-f:]+$ ]] || return 1
+    if [[ $value == *::* ]]; then
+        left=${value%%::*}; right=${value#*::}; [[ $right != *::* ]] || return 1
+        for part in "$left" "$right"; do
+            [[ -z $part ]] && continue
+            local IFS=:; read -r -a groups <<< "$part"
+            for part in "${groups[@]}"; do [[ $part =~ ^[0-9A-Fa-f]{1,4}$ ]] || return 1; ((count+=1)); done
+        done
+        ((count < 8))
+    else
+        local IFS=:; read -r -a groups <<< "$value"
+        ((${#groups[@]} == 8)) || return 1
+        for part in "${groups[@]}"; do [[ $part =~ ^[0-9A-Fa-f]{1,4}$ ]] || return 1; done
+    fi
+}
+
+valid_nmap_menu_target() {
+    local value=$1 ip prefix first last
+    [[ -n $value && $value != *[[:space:]]* ]] || return 1
+    if [[ $value == */* ]]; then
+        ip=${value%/*}; prefix=${value##*/}
+        valid_ipv4 "$ip" && [[ $prefix =~ ^[0-9]+$ ]] && ((10#$prefix <= 32))
+        return
+    fi
+    if [[ $value == *-* && $value =~ ^[0-9.-]+$ ]]; then
+        first=${value%-*}; last=${value##*-}
+        valid_ipv4 "$first" && [[ $last =~ ^[0-9]{1,3}$ ]] && ((10#$last <= 255 && 10#${first##*.} <= 10#$last))
+        return
+    fi
+    if [[ $value =~ ^[0-9.]+$ ]]; then valid_ipv4 "$value"; return; fi
+    valid_ipv6_literal "$value" || valid_hostname "$value"
+}
+
 interactive_nmap() {
     local choice profile description target ports timing skip_discovery save_output output_name action self
     local ask_ports
@@ -450,8 +510,12 @@ MENU
         printf '\nSELECTED: %s\n\n' "$description"
         printf 'TARGET EXAMPLES\n'
         printf '  One host:       192.0.2.10\n  A subnet:       192.0.2.0/24\n  A range:        192.0.2.10-50\n  A hostname:     server.example.com\n'
-        read -r -p 'Target you own or are authorized to scan: ' target
-        [[ -n $target ]] || { printf 'No target entered.\n'; continue; }
+        while :; do
+            read -r -p 'Target you own or are authorized to scan: ' target || return
+            if valid_nmap_menu_target "$target"; then break; fi
+            printf 'Invalid target. Enter a complete IPv4 address, IPv4/prefix, last-octet range, IPv6 address, or hostname.\n'
+            printf 'Example: 192.168.1.10 (not 192.168.1)\n'
+        done
         run_args=(--profile "$profile" --target "$target")
 
         if [[ $ask_ports == yes ]]; then
@@ -661,7 +725,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 PROGRAM=${0##*/}
-VERSION=2.0.0
+VERSION=2.1.0
 SPLIT_MODE=auto
 DRY_RUN=0
 AUTO_LAUNCH=0
@@ -802,6 +866,65 @@ prompt_yes_no() {
 
 valid_port() { [[ $1 =~ ^[0-9]+$ ]] && ((10#$1 >= 1 && 10#$1 <= 65535)); }
 
+valid_ipv4() {
+    local ip=$1 part
+    local -a parts=()
+    [[ $ip =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || return 1
+    local IFS=.; read -r -a parts <<< "$ip"
+    ((${#parts[@]} == 4)) || return 1
+    for part in "${parts[@]}"; do ((10#$part <= 255)) || return 1; done
+}
+
+valid_hostname() {
+    local value=$1 label
+    local -a labels=()
+    ((${#value} >= 1 && ${#value} <= 253)) || return 1
+    [[ $value != .* && $value != *. && $value != *..* ]] || return 1
+    local IFS=.; read -r -a labels <<< "$value"
+    for label in "${labels[@]}"; do
+        ((${#label} >= 1 && ${#label} <= 63)) || return 1
+        [[ $label =~ ^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$ ]] || return 1
+    done
+}
+
+valid_ipv6_literal() {
+    local value=$1 zone='' left right part count=0
+    local -a groups=()
+    if [[ $value == \[*\] ]]; then value=${value:1:${#value}-2}
+    elif [[ $value == *'['* || $value == *']'* ]]; then return 1; fi
+    if [[ $value == *%* ]]; then zone=${value##*%}; value=${value%%%*}; [[ $zone =~ ^[A-Za-z0-9_.-]+$ ]] || return 1; fi
+    [[ $value == *:* && $value =~ ^[0-9A-Fa-f:]+$ ]] || return 1
+    if [[ $value == *::* ]]; then
+        left=${value%%::*}; right=${value#*::}; [[ $right != *::* ]] || return 1
+        for part in "$left" "$right"; do
+            [[ -z $part ]] && continue
+            local IFS=:; read -r -a groups <<< "$part"
+            for part in "${groups[@]}"; do [[ $part =~ ^[0-9A-Fa-f]{1,4}$ ]] || return 1; ((count+=1)); done
+        done
+        ((count < 8))
+    else
+        local IFS=:; read -r -a groups <<< "$value"
+        ((${#groups[@]} == 8)) || return 1
+        for part in "${groups[@]}"; do [[ $part =~ ^[0-9A-Fa-f]{1,4}$ ]] || return 1; done
+    fi
+}
+
+valid_host_or_ip() {
+    local value=$1
+    [[ -n $value && $value != *[[:space:]]* ]] || return 1
+    if [[ $value =~ ^[0-9.]+$ ]]; then valid_ipv4 "$value"; return; fi
+    valid_ipv6_literal "$value" || valid_hostname "$value"
+}
+
+prompt_host() {
+    local label=$1 default=${2-}
+    while :; do
+        prompt_required "$label" "$default"
+        valid_host_or_ip "$REPLY" && return
+        printf 'Enter a complete IPv4 address, IPv6 address, or hostname. Example: 192.168.1.10 (not 192.168.1).\n'
+    done
+}
+
 prompt_port() {
     local label=$1 default=${2-}
     while :; do
@@ -837,7 +960,7 @@ collect_connection() {
     printf 'The SSH server is the machine that carries the tunnel. It is the same\n'
     printf 'machine you would normally connect to with: ssh user@server\n\n'
     prompt_required 'Short pane name (example: Office Database)'; C_NAME=$REPLY
-    prompt_required 'SSH server address (example: 203.0.113.10 or bastion.example.com)'; C_HOST=$REPLY
+    prompt_host 'SSH server address (example: 203.0.113.10 or bastion.example.com)'; C_HOST=$REPLY
     prompt_required 'Username on that SSH server' "${USER:-}"; C_USER=$REPLY
     prompt_port 'SSH service port (normally 22)' 22; C_SSH_PORT=$REPLY
     printf 'Key file is optional. Leave it blank to let SSH use ssh-agent, its default\nkey files, or ask for a password inside the tunnel pane.\n'
@@ -861,7 +984,7 @@ add_local() {
     printf 'Example: open localhost:8080 here and reach an internal website at\nweb.internal:80. Your application connects to localhost:8080.\n'
     collect_connection
     prompt_port 'Port to open on this computer (example: 8080)' 8080; local listen=$REPLY
-    prompt_required 'Destination address visible from the SSH server (example: 10.20.0.15)'; local dest=$REPLY
+    prompt_host 'Destination address visible from the SSH server (example: 10.20.0.15)'; local dest=$REPLY
     prompt_port 'Destination service port (example: 80, 443, 3389, or 5432)'; local dport=$REPLY
     local bind=127.0.0.1
     prompt_yes_no 'Allow other computers to connect to your local tunnel port?' n
@@ -874,7 +997,7 @@ add_remote() {
     printf 'Example: make port 9000 on the SSH server lead back to a web application\nrunning on this computer at 127.0.0.1:3000.\n'
     collect_connection
     prompt_port 'Port to open on the SSH server (example: 9000)' 9000; local listen=$REPLY
-    prompt 'Service address on your side' 127.0.0.1; local dest=$REPLY
+    prompt_host 'Service address on your side' 127.0.0.1; local dest=$REPLY
     prompt_port 'Service port on your side (example: 3000)' 3000; local dport=$REPLY
     local bind=127.0.0.1
     prompt_yes_no 'Request a remotely public listening port? Server GatewayPorts must allow it' n
@@ -991,6 +1114,8 @@ load_tunnels() {
         [[ -z ${name-} || $name == \#* ]] && continue
         [[ -z ${extra-} ]] || die "$file:$line has too many fields"
         [[ -n $name && -n $host && -n $user ]] || die "$file:$line is missing a required field"
+        valid_host_or_ip "$host" || die "$file:$line has an invalid SSH hostname or IP address"
+        case $type in local|remote) valid_host_or_ip "$dest" || die "$file:$line has an invalid destination hostname or IP address" ;; esac
         validate_loaded "$type" "$ssh_port" "$listen" "$dest_port" "$reconnect" "$compress" "$raw_flag" "$alive" "$alive_count" || die "$file:$line has invalid values"
         append_tunnel "$name" "$type" "$host" "$user" "$ssh_port" "$bind" "$listen" "$dest" "$dest_port" "$identity" "$jump" "$reconnect" "$compress" "$raw_flag" "$raw_spec" "$alive" "$alive_count"
         ((loaded+=1))
@@ -1003,7 +1128,7 @@ expand_home() {
 }
 
 build_ssh_command() {
-    local i=$1 spec identity destination
+    local i=$1 spec identity destination forward_dest
     SSH_COMMAND=()
     if [[ ${T_RECONNECT[i]} == yes ]]; then SSH_COMMAND=(env AUTOSSH_GATETIME=0 autossh -M 0)
     else SSH_COMMAND=(ssh)
@@ -1012,9 +1137,11 @@ build_ssh_command() {
     [[ ${T_COMPRESS[i]} == yes ]] && SSH_COMMAND+=( -C )
     if [[ -n ${T_IDENTITY[i]} ]]; then identity=$(expand_home "${T_IDENTITY[i]}"); SSH_COMMAND+=( -i "$identity" ); fi
     [[ -n ${T_JUMP[i]} ]] && SSH_COMMAND+=( -J "${T_JUMP[i]}" )
+    forward_dest=${T_DEST[i]}
+    [[ $forward_dest == *:* && $forward_dest != \[*\] ]] && forward_dest="[$forward_dest]"
     case ${T_TYPE[i]} in
-        local) spec="${T_BIND[i]}:${T_LISTEN[i]}:${T_DEST[i]}:${T_DEST_PORT[i]}"; SSH_COMMAND+=( -L "$spec" ) ;;
-        remote) spec="${T_BIND[i]}:${T_LISTEN[i]}:${T_DEST[i]}:${T_DEST_PORT[i]}"; SSH_COMMAND+=( -R "$spec" ) ;;
+        local) spec="${T_BIND[i]}:${T_LISTEN[i]}:${forward_dest}:${T_DEST_PORT[i]}"; SSH_COMMAND+=( -L "$spec" ) ;;
+        remote) spec="${T_BIND[i]}:${T_LISTEN[i]}:${forward_dest}:${T_DEST_PORT[i]}"; SSH_COMMAND+=( -R "$spec" ) ;;
         dynamic) spec="${T_BIND[i]}:${T_LISTEN[i]}"; SSH_COMMAND+=( -D "$spec" ) ;;
         remote-socks) spec="${T_BIND[i]}:${T_LISTEN[i]}"; SSH_COMMAND+=( -R "$spec" ) ;;
         raw) SSH_COMMAND+=( "${T_RAW_FLAG[i]}" "${T_RAW_SPEC[i]}" ) ;;
@@ -1203,7 +1330,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 PROGRAM=${0##*/}
-VERSION=2.0.0
+VERSION=2.1.0
 ACTION=menu
 LOAD_FILE=""
 ASSUME_YES=0
@@ -1306,6 +1433,47 @@ valid_ipv4() {
     for part in "${parts[@]}"; do ((10#$part <= 255)) || return 1; done
 }
 
+valid_hostname() {
+    local value=$1 label
+    local -a labels=()
+    ((${#value} >= 1 && ${#value} <= 253)) || return 1
+    [[ $value != .* && $value != *. && $value != *..* ]] || return 1
+    local IFS=.; read -r -a labels <<< "$value"
+    for label in "${labels[@]}"; do
+        ((${#label} >= 1 && ${#label} <= 63)) || return 1
+        [[ $label =~ ^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$ ]] || return 1
+    done
+}
+
+valid_ipv6_literal() {
+    local value=$1 zone='' left right part count=0
+    local -a groups=()
+    if [[ $value == \[*\] ]]; then value=${value:1:${#value}-2}
+    elif [[ $value == *'['* || $value == *']'* ]]; then return 1; fi
+    if [[ $value == *%* ]]; then zone=${value##*%}; value=${value%%%*}; [[ $zone =~ ^[A-Za-z0-9_.-]+$ ]] || return 1; fi
+    [[ $value == *:* && $value =~ ^[0-9A-Fa-f:]+$ ]] || return 1
+    if [[ $value == *::* ]]; then
+        left=${value%%::*}; right=${value#*::}; [[ $right != *::* ]] || return 1
+        for part in "$left" "$right"; do
+            [[ -z $part ]] && continue
+            local IFS=:; read -r -a groups <<< "$part"
+            for part in "${groups[@]}"; do [[ $part =~ ^[0-9A-Fa-f]{1,4}$ ]] || return 1; ((count+=1)); done
+        done
+        ((count < 8))
+    else
+        local IFS=:; read -r -a groups <<< "$value"
+        ((${#groups[@]} == 8)) || return 1
+        for part in "${groups[@]}"; do [[ $part =~ ^[0-9A-Fa-f]{1,4}$ ]] || return 1; done
+    fi
+}
+
+valid_host_or_ip() {
+    local value=$1
+    [[ -n $value && $value != *[[:space:]]* ]] || return 1
+    if [[ $value =~ ^[0-9.]+$ ]]; then valid_ipv4 "$value"; return; fi
+    valid_ipv6_literal "$value" || valid_hostname "$value"
+}
+
 valid_cidr() {
     local value=$1 ip prefix
     [[ $value == */* ]] || return 1
@@ -1366,6 +1534,8 @@ same_executor() {
 
 prompt_ipv4() { local label=$1 default=${2-}; while :; do prompt_required "$label" "$default"; valid_ipv4 "$REPLY" && return; printf 'Enter a valid IPv4 address.\n'; done; }
 prompt_cidr() { local label=$1 default=${2-}; while :; do prompt_required "$label" "$default"; valid_cidr "$REPLY" && return; printf 'Enter IPv4/prefix, for example 10.200.1.1/30.\n'; done; }
+prompt_host() { local label=$1 default=${2-}; while :; do prompt_required "$label" "$default"; valid_host_or_ip "$REPLY" && return; printf 'Enter a complete IPv4 address, IPv6 address, or hostname. Example: 192.168.1.10 (not 192.168.1).\n'; done; }
+prompt_routes() { local label=$1; while :; do prompt "$label" ''; valid_routes "$REPLY" && return; printf 'Enter IPv4/prefix values or default, separated by commas; or leave blank.\n'; done; }
 
 collect_executor() {
     local label=$1 default=${2:-ssh}
@@ -1376,7 +1546,7 @@ collect_executor() {
     done
     E_HOST=''; E_USER=''; E_PORT=22; E_KEY=''; E_JUMP=''
     if [[ $E_KIND == ssh ]]; then
-        prompt_required "$label management hostname/IP"; E_HOST=$REPLY
+        prompt_host "$label management hostname/IP"; E_HOST=$REPLY
         prompt_required "$label SSH username" "${USER:-}"; E_USER=$REPLY
         while :; do prompt_required "$label SSH port" 22; valid_port "$REPLY" && { E_PORT=$REPLY; break; }; printf 'Enter a port from 1 through 65535.\n'; done
         prompt "$label identity file; blank uses normal SSH authentication" ''; E_KEY=$REPLY
@@ -1391,7 +1561,7 @@ collect_endpoint() {
     prompt_ipv4 "$label outer IPv4 address (must exist on that box)"; EP_OUTER=$REPLY
     prompt_cidr "$label inner tunnel address/prefix"; EP_INNER=$REPLY
     prompt "$label underlay device; blank lets Linux route normally" ''; EP_DEV=$REPLY
-    prompt "$label routes through the peer, comma-separated; blank for none" ''; EP_ROUTES=$REPLY
+    prompt_routes "$label routes through the peer, comma-separated; blank for none"; EP_ROUTES=$REPLY
 }
 
 append_tunnel() {
@@ -1443,9 +1613,8 @@ add_tunnel() {
     printf 'Assigned automatically: endpoint A = %s, endpoint B = %s\n' "$a_inner" "$b_inner"
     local a_dev='' b_dev='' a_routes='' b_routes=''
     printf '\nROUTES (OPTIONAL)\nA route is a network located behind the opposite endpoint. Leave these blank if\nyou only need traffic between the two inner tunnel addresses.\n'
-    prompt 'Network(s) behind endpoint B that A should reach, comma-separated (example: 10.50.0.0/16)' ''; a_routes=$REPLY
-    prompt 'Network(s) behind endpoint A that B should reach, comma-separated (example: 10.60.0.0/16)' ''; b_routes=$REPLY
-    valid_routes "$a_routes" && valid_routes "$b_routes" || die 'routes must be IPv4/prefix values or default, separated by commas'
+    prompt_routes 'Network(s) behind endpoint B that A should reach, comma-separated (example: 10.50.0.0/16)'; a_routes=$REPLY
+    prompt_routes 'Network(s) behind endpoint A that B should reach, comma-separated (example: 10.60.0.0/16)'; b_routes=$REPLY
     while :; do prompt 'Encapsulation depth (1 for a normal IPIP tunnel)' 1; [[ $REPLY =~ ^[0-9]+$ ]] && ((10#$REPLY >= 1)) && { depth=$((10#$REPLY)); break; }; printf 'Enter 1 or greater.\n'; done
     suggested=$((1500 - 20 * depth)); ((suggested < 576)) && suggested=576
     while :; do prompt 'Tunnel interface MTU' "$suggested"; [[ $REPLY =~ ^[0-9]+$ ]] && ((10#$REPLY >= 68 && 10#$REPLY <= 65535)) && { mtu=$REPLY; break; }; printf 'Enter a valid IPv4 MTU.\n'; done
@@ -1508,8 +1677,8 @@ validate_record() {
     local ifname=$1 ak=$2 ah=$3 au=$4 ap=$5 ao=$6 ai=$7 bk=$8 bh=$9 bu=${10} bp=${11} bo=${12} bi=${13} mtu=${14} ttl=${15} pmtu=${16} forward=${17}
     [[ ${#ifname} -le 15 && $ifname =~ ^[A-Za-z0-9_.-]+$ ]] || return 1
     [[ $ak == local || $ak == ssh ]] && [[ $bk == local || $bk == ssh ]] || return 1
-    if [[ $ak == ssh ]]; then [[ -n $ah && -n $au ]] && valid_port "$ap" || return 1; fi
-    if [[ $bk == ssh ]]; then [[ -n $bh && -n $bu ]] && valid_port "$bp" || return 1; fi
+    if [[ $ak == ssh ]]; then [[ -n $au ]] && valid_host_or_ip "$ah" && valid_port "$ap" || return 1; fi
+    if [[ $bk == ssh ]]; then [[ -n $bu ]] && valid_host_or_ip "$bh" && valid_port "$bp" || return 1; fi
     valid_ipv4 "$ao" && valid_cidr "$ai" && valid_ipv4 "$bo" && valid_cidr "$bi" && same_inner_network "$ai" "$bi" || return 1
     [[ $mtu =~ ^[0-9]+$ ]] && ((10#$mtu >= 68 && 10#$mtu <= 65535)) || return 1
     if [[ $ttl != inherit ]]; then [[ $ttl =~ ^[0-9]+$ ]] && ((10#$ttl >= 1 && 10#$ttl <= 255)) || return 1; fi
@@ -1549,7 +1718,10 @@ build_script() {
             local add_line change_line
             printf -v add_line '%q ' ip tunnel add "$ifname" "${tunnel_args[@]}"
             printf -v change_line '%q ' ip tunnel change "$ifname" "${tunnel_args[@]}"
-            ENDPOINT_SCRIPT+="if ip tunnel show $(printf '%q' "$ifname") >/dev/null 2>&1; then $change_line; else $add_line; fi"$'\n'
+            # `ip tunnel show NAME` can report success even when NAME does not
+            # exist on some iproute2 releases. Check the network device itself
+            # so a first apply reliably chooses `ip tunnel add`.
+            ENDPOINT_SCRIPT+="if ip link show dev $(printf '%q' "$ifname") >/dev/null 2>&1; then $change_line; else $add_line; fi"$'\n'
             if [[ ${inner##*/} == 32 ]]; then append_cmd ENDPOINT_SCRIPT ip addr replace "$inner" peer "$peer_inner/32" dev "$ifname"
             else append_cmd ENDPOINT_SCRIPT ip addr replace "$inner" dev "$ifname"; fi
             append_cmd ENDPOINT_SCRIPT ip link set dev "$ifname" mtu "$mtu" up
@@ -1581,7 +1753,15 @@ run_endpoint() {
     build_script "$i" "$side" "$op"; endpoint_fields "$i" "$side"
     printf '\n[%s endpoint %s on %s]\n' "${N_IF[i]}" "$side" "$(target_label "$i" "$side")"
     if [[ $X_KIND == local ]]; then
-        if ((EUID == 0)); then bash -c "$ENDPOINT_SCRIPT"; else command -v sudo >/dev/null 2>&1 || die 'sudo is required for local configuration'; sudo bash -c "$ENDPOINT_SCRIPT"; fi
+        if ((EUID == 0)); then
+            bash -c "$ENDPOINT_SCRIPT"
+        else
+            if ! command -v sudo >/dev/null 2>&1; then
+                printf 'ERROR: sudo is required for local configuration.\n' >&2
+                return 127
+            fi
+            sudo bash -c "$ENDPOINT_SCRIPT"
+        fi
     else
         local -a ssh_args=(ssh -tt -o ConnectTimeout=15 -p "$X_PORT")
         if [[ -n $X_KEY ]]; then
@@ -1599,20 +1779,48 @@ confirm_action() {
     local word=$1 value
     ((ASSUME_YES)) && return
     printf '\nThis action changes live routing on local/remote hosts and may interrupt SSH.\n'
-    read -r -p "Type $word to continue: " value || exit 1
-    [[ $value == "$word" ]] || die 'confirmation did not match; nothing changed'
+    if ! read -r -p "Type $word to continue: " value; then
+        printf 'Action cancelled; nothing changed.\n' >&2
+        return 1
+    fi
+    if [[ $value != "$word" ]]; then
+        printf 'Action cancelled because confirmation did not match; nothing changed.\n' >&2
+        return 1
+    fi
+}
+
+run_endpoint_checked() {
+    local i=$1 side=$2 op=$3 status
+    if run_endpoint "$i" "$side" "$op"; then
+        return 0
+    else
+        status=$?
+    fi
+    printf '\nERROR: %s stopped for tunnel %s, endpoint %s (%s).\n' \
+        "${op^^}" "${N_IF[i]}" "$side" "$(target_label "$i" "$side")" >&2
+    printf 'The tunnel definitions are still loaded. Fix the reported problem and retry from this menu.\n' >&2
+    [[ $op != apply ]] || printf 'Some earlier endpoints may already be configured; use Status or Destroy to inspect or undo them.\n' >&2
+    return "$status"
 }
 
 perform_action() {
     local op=$1 i side
-    ((${#N_IF[@]})) || die 'no tunnels are defined'
+    if ((${#N_IF[@]} == 0)); then
+        printf 'ERROR: no tunnels are defined. Add or load a tunnel first.\n' >&2
+        return 1
+    fi
     if [[ $op == plan ]]; then list_tunnels; for ((i=0; i<${#N_IF[@]}; i++)); do print_endpoint "$i" A apply; print_endpoint "$i" B apply; done; return; fi
-    [[ $op != apply ]] || confirm_action APPLY
-    [[ $op != destroy ]] || confirm_action DESTROY
+    [[ $op != apply ]] || { confirm_action APPLY || return $?; }
+    [[ $op != destroy ]] || { confirm_action DESTROY || return $?; }
     if [[ $op == destroy ]]; then
-        for ((i=${#N_IF[@]}-1; i>=0; i--)); do run_endpoint "$i" B destroy; run_endpoint "$i" A destroy; done
+        for ((i=${#N_IF[@]}-1; i>=0; i--)); do
+            run_endpoint_checked "$i" B destroy || return $?
+            run_endpoint_checked "$i" A destroy || return $?
+        done
     else
-        for ((i=0; i<${#N_IF[@]}; i++)); do for side in A B; do run_endpoint "$i" "$side" "$op"; done; done
+        for ((i=0; i<${#N_IF[@]}; i++)); do
+            for side in A B; do run_endpoint_checked "$i" "$side" "$op" || return $?; done
+        done
     fi
 }
 
@@ -1650,7 +1858,10 @@ MENU
             1) add_tunnel ;; 2) list_tunnels ;; 3) remove_tunnel ;;
             4) prompt_required 'Save filename' ipip-topology.txt; save_topology "$REPLY" ;;
             5) prompt_required 'Topology file'; load_topology "$REPLY" ;;
-            6) perform_action plan ;; 7) perform_action apply ;; 8) perform_action status ;; 9) perform_action destroy ;;
+            6) perform_action plan || true ;;
+            7) perform_action apply || true ;;
+            8) perform_action status || true ;;
+            9) perform_action destroy || true ;;
             e) prompt_required 'Export directory' ipip-endpoint-scripts; export_scripts "$REPLY" ;;
             q) return ;; *) printf 'Choose one of the displayed options.\n' ;;
         esac
