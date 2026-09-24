@@ -2,11 +2,12 @@
 
 Independent, searchable command cookbooks for general administration, networking, and defensive security. The original collection has 280 numbered recipes. Additional guides cover network basics/CIDR sweeps, SSH forwarding, and Ligolo-ng, with worked layouts up to eight remote boxes deep. The Nmap toolkit adds a runnable Bash command builder with profiles, readable options, command preview, and native Nmap passthrough.
 
-**The only tool file you need is [master.sh](master.sh).** It is one self-contained persistent menu containing the complete Nmap, SSH tunnel, and IPIP tunnel tools. It does not load the other scripts or the cheat sheets. The remaining files are documentation and development copies.
+**For Nmap, SSH tunneling, and IPIP, the only tool file you need is [master.sh](master.sh).** It is one self-contained persistent menu containing all three tools. It does not load companion scripts or cheat sheets. The Obsidian mapper is intentionally a separate standalone utility and is not embedded in the master.
 
 | File | Coverage |
 |---|---|
 | [Master toolkit menu](master.sh) | One self-contained file with the complete Nmap, SSH tunnel, and IPIP tunnel scripts embedded inside it; includes a persistent menu, dependency checks, and optional standalone extraction |
+| [Obsidian network-map builder](obsidian-network-map.sh) | Standalone interactive device/route mapper with manual entry, local Linux discovery, live or saved traceroute import, address validation, Mermaid Markdown, JSON Canvas, and route-command templates |
 | [Regex — recipes R01–R30](regex.md#example-cookbook) | Find exact fields, extract addresses, filter errors, search logs, validate token shapes |
 | [awk — recipes A01–A30](awk.md#example-cookbook) | Select columns, count/sum/group, join inventories, find duplicates, calculate deltas |
 | [gawk — recipes G01–G30](gawk.md#example-cookbook) | Capture groups, CSV, nested maps, percentiles, timestamps, flags, multiple files |
@@ -58,6 +59,19 @@ chmod +x master.sh
 Current version: **2.1.0**. Option 1 opens Nmap, option 2 opens the SSH tunnel manager, and option 3 opens the IPIP manager. Quitting a tool returns to the master menu. The IPIP tool also returns to its own menu after an endpoint command fails.
 
 `master.sh` contains all three tools. It writes private runtime copies to a temporary directory while running and deletes them when it exits. Malformed IPv4, IPv6, CIDR, hostname, and route input is rejected at the relevant question, which is repeated until you enter a valid value.
+
+## Standalone Obsidian network-map builder
+
+```sh
+chmod +x obsidian-network-map.sh
+./obsidian-network-map.sh
+```
+
+This tool is separate from `master.sh`. On launch, its **Start or Resume** screen offers the last project, up to ten recent projects, an existing-project picker, and new-project creation. Choose **Resume last project** to continue without providing a filename. The optional `--project FILE` argument remains available as a direct shortcut.
+
+The mapper remains in its menu until you close it and autosaves every completed device, trace hop, and route. You can switch projects from inside the menu. Project writes are atomic, and pending changes are saved on normal exit, terminal EOF, Ctrl-C, or termination.
+
+Add devices manually with management, internal, and external addresses; discover the current Linux machine; run traceroute/tracepath or import saved trace output; and connect devices with destination networks, gateways, and interfaces. Export writes both an Obsidian Markdown note with a Mermaid diagram and an Obsidian `.canvas` map to the vault folder you specify. Suggested `ip route replace` commands are included for review, but the mapper never changes the live routing table.
 
 ## How to use this repository
 
